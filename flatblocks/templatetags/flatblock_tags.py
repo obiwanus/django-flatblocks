@@ -90,12 +90,12 @@ class BasicFlatBlockWrapper(object):
             self.tpl_name = args[2]
         else:
             raise template.TemplateSyntaxError, "%r tag should have between 1 and 4 arguments" % (tokens[0],)
-        # Check to see if the slug is properly double/single quoted
+            # Check to see if the slug is properly double/single quoted
         if not (self.slug[0] == self.slug[-1] and self.slug[0] in ('"', "'")):
             self.is_variable = True
         else:
             self.slug = self.slug[1:-1]
-        # Clean up the template name
+            # Clean up the template name
         if self.tpl_name is not None:
             if not(self.tpl_name[0] == self.tpl_name[-1] and self.tpl_name[0] in ('"', "'")):
                 self.tpl_is_variable = True
@@ -107,8 +107,8 @@ class BasicFlatBlockWrapper(object):
     def __call__(self, parser, token):
         self.prepare(parser, token)
         return FlatBlockNode(self.slug, self.is_variable, self.cache_time,
-                template_name=self.tpl_name,
-                tpl_is_variable=self.tpl_is_variable)
+            template_name=self.tpl_name,
+            tpl_is_variable=self.tpl_is_variable)
 
 class PlainFlatBlockWrapper(BasicFlatBlockWrapper):
     def __call__(self, parser, token):
@@ -120,7 +120,7 @@ do_plain_flatblock = PlainFlatBlockWrapper()
 
 class FlatBlockNode(template.Node):
     def __init__(self, slug, is_variable, cache_time=0, with_template=True,
-            template_name=None, tpl_is_variable=False):
+                 template_name=None, tpl_is_variable=False):
         if template_name is None:
             self.template_name = 'flatblocks/flatblock.html'
         else:
@@ -142,7 +142,7 @@ class FlatBlockNode(template.Node):
             real_template = self.template_name.resolve(context)
         else:
             real_template = self.template_name
-        # Eventually we want to pass the whole context to the template so that
+            # Eventually we want to pass the whole context to the template so that
         # users have the maximum of flexibility of what to do in there.
         if self.with_template:
             new_ctx = template.Context({})
@@ -157,22 +157,25 @@ class FlatBlockNode(template.Node):
                 # if flatblock's slug is hard-coded in template then it is
                 # safe and convenient to auto-create block if it doesn't exist.
                 # This behaviour can be configured using the
-                # FLATBLOCKS_AUTOCREATE_STATIC_BLOCKS setting
-                if self.is_variable or not settings.AUTOCREATE_STATIC_BLOCKS:
+                # FLATBLOCKS_AUTOCREATE_STATIC_BLOCKS setting.
+                # You can force auto-creation of blocks from
+                # variables by setting FLATBLOCKS_AUTOCREATE_VARIABLE_BLOCKS to True
+                if (self.is_variable and not settings.AUTOCREATE_VARIABLE_BLOCKS)\
+                or not settings.AUTOCREATE_STATIC_BLOCKS:
                     flatblock = FlatBlock.objects.get(slug=real_slug)
                 else:
                     flatblock, _ = FlatBlock.objects.get_or_create(
-                                      slug=real_slug,
-                                      defaults = {'content': real_slug}
-                                   )
+                        slug=real_slug,
+                        defaults = {'content': real_slug}
+                    )
                 if self.cache_time != 0:
                     if self.cache_time is None or self.cache_time == 'None':
                         logger.debug("Caching %s for the cache's default timeout"
-                                % (real_slug,))
+                        % (real_slug,))
                         cache.set(cache_key, flatblock)
                     else:
                         logger.debug("Caching %s for %s seconds" % (real_slug,
-                            str(self.cache_time)))
+                                                                    str(self.cache_time)))
                         cache.set(cache_key, flatblock, int(self.cache_time))
                 else:
                     logger.debug("Don't cache %s" % (real_slug,))
